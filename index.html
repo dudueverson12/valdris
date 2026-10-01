@@ -3,20 +3,193 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Valdris — Capítulo 1</title>
+<title>Gota Clara</title>
 <style>
-  body { margin: 0; background: #111; color: #f3efe6; font-family: Georgia, serif; }
-  header { padding: 1rem 1.25rem; border-bottom: 1px solid #2a2a2a; }
-  h1 { font-size: 1.2rem; font-weight: 500; margin: 0; }
-  p { color: #9a9186; margin: 0.35rem 0 0; }
-  main { max-width: 420px; margin: 0 auto; padding: 0 0 3rem; }
-  img { display: block; width: 100%; height: auto; background: #fff; }
+  :root {
+    color-scheme: dark;
+    --bg: #141311;
+    --fg: #ebe6dc;
+    --muted: #a39b8e;
+    --line: #2c2a26;
+    --btn: #221f1b;
+    --btn-fg: #ebe6dc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    line-height: 1.65;
+  }
+  header, .nav, main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+  header {
+    padding-top: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 {
+    font-size: 1.45rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+  header p {
+    margin: 0.3rem 0 0;
+    color: var(--muted);
+    font-family: system-ui, sans-serif;
+    font-size: 0.92rem;
+  }
+  .nav {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    z-index: 1;
+  }
+  button, select {
+    font-family: system-ui, sans-serif;
+    font-size: 0.95rem;
+    color: var(--btn-fg);
+    background: var(--btn);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    padding: 0.55rem 0.7rem;
+  }
+  button { cursor: pointer; white-space: nowrap; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  select { flex: 1; min-width: 0; }
+  main { padding-top: 1.25rem; padding-bottom: 3rem; }
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0 0 1.1rem;
+    line-height: 1.35;
+  }
+  p { margin: 0 0 0.95rem; font-size: 1.05rem; }
+  p.fala { margin-left: 0; }
+  strong { font-weight: 700; }
+  .fim {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  .fim button { flex: 1; }
 </style>
 </head>
 <body>
-<header><h1>VALDRIS</h1><p>Capítulos 1 e 2</p></header>
+<header>
+  <h1>Gota Clara</h1>
+  <p>capítulos 1 a 500, texto.</p>
+</header>
+<nav class="nav" aria-label="Capítulos">
+  <button type="button" id="anterior">Anterior</button>
+  <select id="ir" aria-label="Ir para o capítulo"></select>
+  <button type="button" id="proximo">Próximo</button>
+</nav>
 <main>
-<p style="padding:1.25rem">A história está sendo refeita.</p>
+  <h2 id="titulo"></h2>
+  <article id="texto"></article>
+  <div class="fim">
+    <button type="button" id="anterior2">Anterior</button>
+    <button type="button" id="proximo2">Próximo</button>
+  </div>
 </main>
+<script src="chapters.js"></script>
+<script>
+(function () {
+  var lista = window.CAPITULOS || [];
+  var chave = "gota-clara-capitulo";
+  var titulo = document.getElementById("titulo");
+  var texto = document.getElementById("texto");
+  var ir = document.getElementById("ir");
+  var anterior = document.getElementById("anterior");
+  var proximo = document.getElementById("proximo");
+  var anterior2 = document.getElementById("anterior2");
+  var proximo2 = document.getElementById("proximo2");
+
+  lista.forEach(function (cap) {
+    var opt = document.createElement("option");
+    opt.value = String(cap.n);
+    opt.textContent = cap.n + ". " + cap.title;
+    ir.appendChild(opt);
+  });
+
+  function escapar(s) {
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function paragrafo(s) {
+    var html = escapar(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    var cls = s.charAt(0) === "\u2014" ? "fala" : "";
+    return '<p class="' + cls + '">' + html + "</p>";
+  }
+
+  function mostrar(n, gravar) {
+    n = Number(n);
+    if (!lista.length || n < 1) n = 1;
+    if (n > lista.length) n = lista.length;
+    var cap = lista[n - 1];
+    if (!cap || cap.n !== n) {
+      cap = lista.find(function (c) { return c.n === n; }) || lista[0];
+      n = cap.n;
+    }
+    document.title = "Gota Clara";
+    titulo.textContent = "Capítulo " + cap.n + " — " + cap.title;
+    texto.innerHTML = cap.paragraphs.map(paragrafo).join("");
+    ir.value = String(n);
+    var noInicio = n <= 1;
+    var noFim = n >= lista.length;
+    anterior.disabled = anterior2.disabled = noInicio;
+    proximo.disabled = proximo2.disabled = noFim;
+    if (gravar) {
+      try { localStorage.setItem(chave, String(n)); } catch (e) {}
+      if (location.hash !== "#c" + n) {
+        history.replaceState(null, "", "#c" + n);
+      }
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function atual() {
+    var m = (location.hash || "").match(/^#c(\d+)$/);
+    if (m) return Number(m[1]);
+    try {
+      var salvo = Number(localStorage.getItem(chave));
+      if (salvo >= 1) return salvo;
+    } catch (e) {}
+    return 1;
+  }
+
+  anterior.addEventListener("click", function () { mostrar(atual() - 1, true); });
+  anterior2.addEventListener("click", function () { mostrar(atual() - 1, true); });
+  proximo.addEventListener("click", function () { mostrar(atual() + 1, true); });
+  proximo2.addEventListener("click", function () { mostrar(atual() + 1, true); });
+  ir.addEventListener("change", function () { mostrar(ir.value, true); });
+  window.addEventListener("hashchange", function () { mostrar(atual(), true); });
+
+  mostrar(atual(), false);
+  try {
+    if (!location.hash) {
+      var salvo = localStorage.getItem(chave);
+      if (salvo) mostrar(salvo, false);
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
